@@ -1,0 +1,46 @@
+## Build stage
+#
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
+
+# Copy the source code to the /source dir
+WORKDIR /source
+
+# Copy the solution
+COPY MailKitConsoleApp.sln .
+
+# Copy the projects
+COPY EmailService EmailService/
+COPY MailKitConsoleApp MailKitConsoleApp/
+
+RUN dotnet build-server shutdown
+    
+# Build solution
+RUN dotnet build MailKitConsoleApp.sln --configuration Release
+
+# End the analysis
+## RUN dotnet-sonarscanner end /d:sonar.login=$SONAR_QUBE_TOKEN
+
+RUN ls /source/*
+
+# Publish the console app
+RUN dotnet publish /source/MailKitConsoleApp/MailKitConsoleApp.csproj -o /app \
+-p:GenerateProjectSpecificOutputFolder=false \
+-p:Configuration=Release \
+-p:LangVersion=latest
+
+
+## base image
+#
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as base
+
+# INSTALL SOME DIAGNOSTIC TOOLS 
+RUN apt-get update; apt-get install htop -y; apt-get install procps -y; apt-get install screen -y
+
+RUN dotnet tool install --global dotnet-trace
+ENV PATH $PATH:/root/.dotnet/tools
+
+WORKDIR /app
+COPY --from=build /app .
+
+# Set the entrypoint
+ENTRYPOINT bash

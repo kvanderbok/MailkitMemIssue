@@ -99,10 +99,12 @@ namespace EmailService.Implementation
 
         private void LogWithMemUsage(string msg)
         {
+            
             long mem = GC.GetTotalMemory(false);
             _proc.Refresh();
             long privateMemory = _proc.PrivateMemorySize64;
-            _logger.LogInformation($"Message: {msg}\n\tMemory: {Pretty(mem)}\n\tPrivate Memory: {Pretty(privateMemory)}");
+            long workingSet = _proc.WorkingSet64;
+            _logger.LogInformation($"Message: {msg}\n\tMemory: {Pretty(mem)}\n\tPrivate Memory: {Pretty(privateMemory)}\n\tWorking Set: {Pretty(workingSet)}");
             LogManager.Flush();
         }
 
