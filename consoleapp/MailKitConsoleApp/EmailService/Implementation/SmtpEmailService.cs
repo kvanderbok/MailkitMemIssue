@@ -30,8 +30,6 @@ namespace EmailService.Implementation
         {
             _proc = Process.GetCurrentProcess();
 
-            LogWithMemUsage("SendEmail called");
-      
             var message = new MimeMessage();
             
             try
@@ -45,25 +43,16 @@ namespace EmailService.Implementation
                     Text = @"Hey, hello this is a test"
                 };
             
-                LogWithMemUsage("Sending Email");
                 using (var client = new SmtpClient())
                 {
-                    LogWithMemUsage("Created SmtpClient");
-                    LogWithMemUsage($"Call client.Connect with: " +
-                        $"Host: {_smtpConfiguration.Host}, " +
-                        $"Port: {_smtpConfiguration.Port}, " +
-                        $"SecureSocketOptions: { Enum.GetName(typeof(SecureSocketOptions), _smtpConfiguration.SecureSocketOptions)}");
-            
-                    client.Connect(_smtpConfiguration.Host, _smtpConfiguration.Port, _smtpConfiguration.SecureSocketOptions);
-            
-                    LogWithMemUsage("Call client.Authenticate");
-                    client.Authenticate(_smtpConfiguration.UserName, _smtpConfiguration.Password);
-            
-                    LogWithMemUsage("Call client.Send");
-                    client.Send(message);
-            
-                    LogWithMemUsage("Call client.Disconnect");
-                    client.Disconnect(true);
+
+                    ExecuteWithMemInfo("Connect", () => client.Connect(_smtpConfiguration.Host, _smtpConfiguration.Port, _smtpConfiguration.SecureSocketOptions));
+
+                    ExecuteWithMemInfo("Authenticate", () => client.Authenticate(_smtpConfiguration.UserName, _smtpConfiguration.Password));
+
+                    ExecuteWithMemInfo("Send", () => client.Send(message));
+
+                    ExecuteWithMemInfo("Disconnect", () => client.Disconnect(true));
                 }
             }
             catch (Exception ex)
@@ -74,9 +63,7 @@ namespace EmailService.Implementation
             }
             finally
             {
-                LogWithMemUsage("Calling DisposeMimeMessage");
                 DisposeMimeMessage(message);
-                LogWithMemUsage("Called DisposeMimeMessage");
             
                 _proc.Dispose();
             }
@@ -106,6 +93,19 @@ namespace EmailService.Implementation
             long workingSet = _proc.WorkingSet64;
             _logger.LogInformation($"Message: {msg}\n\tMemory: {Pretty(mem)}\n\tPrivate Memory: {Pretty(privateMemory)}\n\tWorking Set: {Pretty(workingSet)}");
             LogManager.Flush();
+        }
+
+        private void ExecuteWithMemInfo(string methodName, Action action)
+        {
+            _proc.Refresh();
+            long workingSetPre = _proc.WorkingSet64;
+
+            action();
+
+            _proc.Refresh();
+            long workingSetPost = _proc.WorkingSet64;
+
+            Console.WriteLine($"Called {methodName} Workingset: {Pretty(workingSetPost)} Increase: {Pretty(workingSetPost - workingSetPre)}");
         }
 
         private static void DisposeMimeMessage(MimeMessage message)

@@ -14,24 +14,24 @@ namespace MailKitConsoleApp
 
         public void Run()
         {
-            Console.WriteLine("Send email to");
+            Console.WriteLine("Send email to?");
             string to = Console.ReadLine();
 
-            Console.WriteLine("Send email from");
+            Console.WriteLine("Send email from?");
             string from = Console.ReadLine();
 
-            string send;
+            Console.WriteLine("How many?");
+            int numberOfEmails = int.Parse(Console.ReadLine());
 
-            do
+            for (int i = 0; i < numberOfEmails; i++)
             {
-                Console.WriteLine("SendEmail? Y / Q to quit");
-                send = Console.ReadLine();
-                if (send.ToLower() == "y")
-                {
-                    _emailService.SendEmail(from, to);
-                }
+                Console.WriteLine($"Run {i + 1} of {numberOfEmails}");
+                _emailService.SendEmail(from, to);
+                Console.WriteLine();
             }
-            while (send.ToLower() != "q");
+
+            Console.WriteLine("Emails sent");
+            Console.ReadLine();
         }
     }
 }
