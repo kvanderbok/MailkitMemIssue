@@ -37,6 +37,8 @@ FROM mcr.microsoft.com/dotnet/core/sdk:3.1 as base
 RUN apt-get update; apt-get install htop -y; apt-get install procps -y; apt-get install screen -y
 
 RUN dotnet tool install --global dotnet-trace
+RUN dotnet tool install --global dotnet-counters
+RUN dotnet tool install --global dotnet-dump
 ENV PATH $PATH:/root/.dotnet/tools
 
 WORKDIR /app
